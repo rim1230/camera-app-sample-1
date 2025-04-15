@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { storage } from './firebase.js';
+import { storage } from '../../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
