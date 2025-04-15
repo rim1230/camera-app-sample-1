@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { storage } from './firebase.js';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
-
-// 画像を保存するディレクトリ
-const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-
-// ディレクトリが存在しない場合は作成
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
 
 export async function POST(request) {
   try {
@@ -26,18 +18,20 @@ export async function POST(request) {
     
     // ファイル名を生成（一意のIDを付与）
     const fileName = `${uuidv4()}_image.jpg`;
-    const filePath = path.join(uploadDir, fileName);
     
-    // ファイルを保存
-    fs.writeFileSync(filePath, buffer);
-    
-    // 画像のURLを生成
-    const imageUrl = `/uploads/${fileName}`;
-    
-    return NextResponse.json({ 
+    // Firebase Storageへの参照を作成
+    const storageRef = ref(storage, `uploads/${fileName}`);
+
+    // ファイルをFirebase Storageにアップロード
+    await uploadBytes(storageRef, buffer);
+
+    // アップロードしたファイルのダウンロードURLを取得
+    const downloadURL = await getDownloadURL(storageRef);
+
+    return NextResponse.json({
       success: true,
-      imageUrl,
-      message: '画像が正常にアップロードされました'
+      imageUrl: downloadURL,
+      message: '画像が正常にアップロードされました',
     });
   } catch (error) {
     console.error('アップロードエラー:', error);
